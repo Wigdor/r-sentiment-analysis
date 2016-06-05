@@ -1,0 +1,56 @@
+```{r}
+library(NLP)
+library(qdap)
+
+### Import group of text files stored as *.txt in a given directory
+# Code used for specifying directory: path <- "C:/~..."
+setwd(path)
+files <- dir(path, pattern = "\\.txt")
+print(files)
+
+### Creates matrix for storing sentiment analysis data
+profiles <- matrix(nrow = length(files), ncol = 6L)
+colnames(profiles) <- c("Text", "Sentences", "Words", "Mean", "StDev", "Std Mean")
+
+### Loops through files and performs text cleaning
+for(j in 1:length(files)){
+  txt <- paste(scan(file = files[j], what = "character", strip.white = TRUE), collapse = " ", quote = NULL)
+  txt <- mgsub(c("[", "]", "(", ")","?", ":"), c(" "), txt)
+  txt <- tolower(txt)
+# Code used for removing words: txt <- gsub("words", " ", txt)
+  profiles[j,1] <- txt
+}
+
+### Tokenizes text into sentences; from R's NLP package
+sent_tokenizer <- function(s){
+  s <- as.String(s)
+  m <- gregexpr("[^[:space:]][^.]*\\.", s)[[1L]]
+  Span(m, m + attr(m, "match.length") - 1L)
+}
+
+### Annotates tokenized sentences; from R's NLP package
+sent_annotator <- function(s){
+  sent_token_annotator <- Simple_Sent_Token_Annotator(sent_tokenizer)
+  a <- annotate(s, sent_token_annotator)
+  return(s[a])
+}
+
+### Performs sentiment analysis using polarity function; from R's qdap package 
+for(j in 1:length(files)){
+  txt <- String(profiles[j])
+  profiles[j,2] <- polarity(sent_annotator(txt))$group$total.sentences
+  profiles[j,3] <- polarity(sent_annotator(txt))$group$total.words
+  profiles[j,4] <- polarity(sent_annotator(txt))$group$ave.polarity
+  profiles[j,5] <- polarity(sent_annotator(txt))$group$sd.polarity
+  profiles[j,6] <- polarity(sent_annotator(txt))$group$stan.mean.polarity
+}
+
+### Writes data to a *.csv file
+profiles.df <- as.data.frame(profiles)
+write.csv(profiles.df, file = "sentiment.csv")
+
+### Sources
+# NLP - https://cran.r-project.org/web/packages/NLP/NLP.pdf
+# qdap - https://cran.r-project.org/web/packages/qdap/qdap.pdf
+
+```
