@@ -1,4 +1,4 @@
-### R Sentiment Analysis Project
+### R Sentiment Analysis Tool
 Description: Sentiment analysis tool for analyzing groups of text files using R.
 
 Created: 5/29/2016
